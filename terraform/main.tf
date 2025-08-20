@@ -53,3 +53,68 @@ resource "okta_auth_server" "dpop" {
   issuer_mode = "ORG_URL"
   status      = "ACTIVE"
 }
+
+# Custom API scopes on the dpop authorization server
+resource "okta_auth_server_scope" "app_read" {
+  auth_server_id = okta_auth_server.dpop.id
+  name           = "app.read"
+  description    = "Read access to application API"
+  consent        = "IMPLICIT"
+}
+
+resource "okta_auth_server_scope" "app_write" {
+  auth_server_id = okta_auth_server.dpop.id
+  name           = "app.write"
+  description    = "Write access to application API"
+  consent        = "IMPLICIT"
+}
+
+
+
+# Access policy allowing service apps to get tokens via client_credentials
+resource "okta_auth_server_policy" "dpop_service_policy" {
+  auth_server_id = okta_auth_server.dpop.id
+  name           = "Service Policy"
+  description    = "Allow client_credentials for service apps"
+  status         = "ACTIVE"
+  client_whitelist = [
+    okta_app_oauth.api_service_app.id,
+    okta_app_oauth.secondary_service_app.id
+  ]
+  priority       = 1
+}
+
+resource "okta_auth_server_policy_rule" "allow_service_cc" {
+  policy_id             = okta_auth_server_policy.dpop_service_policy.id
+  name                  = "Allow client_credentials"
+  priority              = 1
+  status                = "ACTIVE"
+  grant_type_whitelist  = ["client_credentials"]
+  scope_whitelist       = [
+    okta_auth_server_scope.app_read.name,
+    okta_auth_server_scope.app_write.name
+  ]
+
+  auth_server_id = okta_auth_server.dpop.id
+}
+
+# Secondary service app (for multi-app support)
+resource "okta_app_oauth" "secondary_service_app" {
+  label                      = var.secondary_app_label
+  type                       = "service"
+  grant_types                = ["client_credentials"]
+  token_endpoint_auth_method = "private_key_jwt"
+  response_types             = ["token"]
+  jwks {
+    kid = local.cc.kid
+    kty = local.cc.kty
+    n   = local.cc.n
+    e   = local.cc.e
+  }
+}
+
+resource "okta_app_oauth_api_scope" "secondary_users_read" {
+  app_id = okta_app_oauth.secondary_service_app.id
+  issuer = "https://${var.okta_org_name}.${var.okta_base_url}"
+  scopes = ["okta.users.read"]
+}

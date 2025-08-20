@@ -21,3 +21,9 @@ variable "app_label" {
   type        = string
   default     = "DPoP API Service App"
 }
+
+variable "secondary_app_label" {
+  description = "Label for the secondary Okta API service application"
+  type        = string
+  default     = "DPoP Secondary Service App"
+}

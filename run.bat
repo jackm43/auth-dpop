@@ -1,0 +1,1 @@
+op run --env-file=.env -- uv run src/app.py
