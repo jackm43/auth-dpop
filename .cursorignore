@@ -1,0 +1,6 @@
+okta-node-dpop-example/node_modules
+terraform/.terraform
+terraform/terraform.tfstate
+!*.env
+!*.pem
+!*.json
