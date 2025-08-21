@@ -27,3 +27,9 @@ variable "secondary_app_label" {
   type        = string
   default     = "DPoP Secondary Service App"
 }
+
+variable "web_app_label" {
+  description = "Label for the Okta web application with authorization code flow"
+  type        = string
+  default     = "DPoP Web App with Refresh Tokens"
+}

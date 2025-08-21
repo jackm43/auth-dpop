@@ -118,3 +118,59 @@ resource "okta_app_oauth_api_scope" "secondary_users_read" {
   issuer = "https://${var.okta_org_name}.${var.okta_base_url}"
   scopes = ["okta.users.read"]
 }
+
+# Web application for authorization code flow with refresh tokens
+resource "okta_app_oauth" "web_app" {
+  label                      = var.web_app_label
+  type                       = "web"
+  grant_types                = ["authorization_code", "refresh_token"]
+  token_endpoint_auth_method = "private_key_jwt"
+  response_types             = ["code"]
+  redirect_uris              = ["http://localhost:8080/callback", "http://127.0.0.1:8080/callback"]
+  post_logout_redirect_uris  = ["http://localhost:8080/logout"]
+  
+  jwks {
+    kid = local.cc.kid
+    kty = local.cc.kty
+    n   = local.cc.n
+    e   = local.cc.e
+  }
+}
+
+# Add the refresh scope for refresh tokens
+resource "okta_auth_server_scope" "refresh" {
+  auth_server_id = okta_auth_server.dpop.id
+  name           = "refresh"
+  description    = "Refresh token access"
+  consent        = "IMPLICIT"
+}
+
+# Policy for web application authorization code flow
+resource "okta_auth_server_policy" "web_app_policy" {
+  auth_server_id = okta_auth_server.dpop.id
+  name           = "Web App Policy"
+  description    = "Allow authorization_code and refresh_token for web apps"
+  status         = "ACTIVE"
+  client_whitelist = [
+    okta_app_oauth.web_app.id
+  ]
+  priority       = 2
+}
+
+resource "okta_auth_server_policy_rule" "allow_web_auth_code" {
+  policy_id             = okta_auth_server_policy.web_app_policy.id
+  name                  = "Allow authorization_code and refresh_token"
+  priority              = 1
+  status                = "ACTIVE"
+  grant_type_whitelist  = ["authorization_code"]
+  scope_whitelist       = [
+    okta_auth_server_scope.app_read.name,
+    okta_auth_server_scope.app_write.name,
+    okta_auth_server_scope.refresh.name
+  ]
+  
+  # Allow all users by including the Everyone group
+  group_whitelist = ["EVERYONE"]
+
+  auth_server_id = okta_auth_server.dpop.id
+}

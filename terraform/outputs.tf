@@ -23,3 +23,24 @@ output "dpop_issuer" {
   description = "Custom dpop authorization server issuer URL"
   value       = "https://${var.okta_org_name}.${var.okta_base_url}/oauth2/${okta_auth_server.dpop.id}"
 }
+
+output "web_app_client_id" {
+  description = "Web application client ID for authorization code flow"
+  value       = okta_app_oauth.web_app.client_id
+}
+
+output "web_app_client_secret" {
+  description = "Web application client secret"
+  value       = okta_app_oauth.web_app.client_secret
+  sensitive   = true
+}
+
+output "authorization_url" {
+  description = "Authorization URL for web application flow"
+  value       = "${okta_auth_server.dpop.issuer}/v1/authorize"
+}
+
+output "token_url" {
+  description = "Token URL for web application flow"
+  value       = "${okta_auth_server.dpop.issuer}/v1/token"
+}
