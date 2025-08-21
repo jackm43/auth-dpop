@@ -1,4 +1,3 @@
-# pip install jwcrypto cryptography
 from jwcrypto import jwk
 from pathlib import Path
 from base64 import urlsafe_b64encode
@@ -23,9 +22,7 @@ def ensure_dir(p: Path):
 
 def rsa_keypair_jwk_rs256():
     k = jwk.JWK.generate(kty='RSA', size=2048)
-    # Compute RFC7638 thumbprint as kid
-    kid = k.thumbprint()  # base64url(SHA-256) over {"e","kty","n"}
-    # annotate use/alg/kid on both private and public JWK exports
+    kid = k.thumbprint()
     pub = jwk.JWK()
     pub.import_key(**json.loads(k.export_public()))
     pub['use'] = 'sig'
@@ -38,21 +35,20 @@ def rsa_keypair_jwk_rs256():
     priv['alg'] = 'RS256'
     priv['kid'] = kid
 
-    # JWKS
     jwks = {"keys": [json.loads(pub.export(private_key=False))]}
     return priv, pub, jwks, kid
 
 def write_pem_and_jwks(prefix: str, target_dir: Path, priv: jwk.JWK, pub: jwk.JWK, jwks: dict):
     ensure_dir(target_dir)
-    # Private key PEM (PKCS#8)
+
     (target_dir / f"{prefix}_private_key.pem").write_bytes(
         priv.export_to_pem(private_key=True, password=None)
     )
-    # Public key PEM
+
     (target_dir / f"{prefix}_public_key.pem").write_bytes(
         pub.export_to_pem()
     )
-    # Public JWKS JSON
+
     (target_dir / f"{prefix}_public_key.json").write_text(
         json.dumps(jwks, indent=2)
     )
@@ -79,7 +75,6 @@ def run():
     ensure_dir(CC_DIR)
     ensure_dir(DPOP_DIR)
 
-    # ---- Client Credentials (private_key_jwt) keypair ----
     cc_priv, cc_pub, cc_jwks, cc_kid = rsa_keypair_jwk_rs256()
     write_pem_and_jwks("cc", CC_DIR, cc_priv, cc_pub, cc_jwks)
     cc_cert_pem = self_signed_cert_from_pem(
@@ -89,7 +84,6 @@ def run():
     )
     (CC_DIR / "cc_cert.pem").write_bytes(cc_cert_pem)
 
-    # ---- DPoP signing keypair ----
     dpop_priv, dpop_pub, dpop_jwks, dpop_kid = rsa_keypair_jwk_rs256()
     write_pem_and_jwks("dpop", DPOP_DIR, dpop_priv, dpop_pub, dpop_jwks)
     dpop_cert_pem = self_signed_cert_from_pem(
@@ -99,13 +93,9 @@ def run():
     )
     (DPOP_DIR / "dpop_cert.pem").write_bytes(dpop_cert_pem)
 
-    # Minimal console output for verification
     pub_cc = json.loads((CC_DIR / "cc_public_key.json").read_text())["keys"][0]
     pub_dp = json.loads((DPOP_DIR / "dpop_public_key.json").read_text())["keys"][0]
-    print("Client kid:", pub_cc["kid"])
-    print("DPoP kid:  ", pub_dp["kid"])
-    # Okta requires at least kty, n, e, kid; alg/use optional but fine
-    for lbl, jwk_pub in [("client", pub_cc), ("dpop", pub_dp)]:
+    for _, jwk_pub in [("client", pub_cc), ("dpop", pub_dp)]:
         assert all(k in jwk_pub for k in ("kty", "n", "e", "kid"))
 
 if __name__ == "__main__":

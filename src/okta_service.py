@@ -388,7 +388,7 @@ class OktaService:
     
     def authenticate(self) -> Optional[str]:
         """
-        Authenticate and generate access token with refresh token support.
+        Authenticate and generate access token with refresh token support.u
         
         Returns:
             str: The access token if successful, None otherwise
@@ -452,7 +452,6 @@ class OktaService:
             # Check for DPoP nonce error
             if 'dpop-nonce' in token_resp.headers:
                 dpop_nonce = token_resp.headers['dpop-nonce']
-                logging.info("Refresh token call failed with nonce error; retrying with nonce")
                 dpop_token = self.helper.generate_dpop_token(
                     'POST', 
                     self.helper.get_token_endpoint(), 
@@ -549,20 +548,18 @@ class OktaService:
         Returns:
             requests.Response: The HTTP response from the API call
         """
-        # Ensure we have a valid access token before making the API call
+
         token = self.authenticate()
         if not token:
             raise Exception("Failed to obtain valid access token for API call")
         
         uri = f"{self.helper.okta_domain}{relative_uri}"
         
-        # Auto-detect DPoP requirement based on issuer
         if use_dpop is None:
             # Custom authorization servers require DPoP, org authorization server uses Bearer
             use_dpop = bool(self.helper.okta_issuer)
         
         if use_dpop:
-            # Use DPoP authentication (for custom authorization servers)
             ath = self.helper.generate_ath(self.helper.access_token)
             dpop_token = self.helper.generate_dpop_token(http_method, uri, {'ath': ath})
             req_headers = {
@@ -628,7 +625,5 @@ class OktaService:
             os.remove(self.helper.token_cache_file)
         logging.info("Cleared all cached tokens")
 
-
-# Create singleton instances
 okta_helper = OktaHelper()
 okta_service = OktaService()

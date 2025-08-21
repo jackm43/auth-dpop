@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Okta Authorization Code Flow with Refresh Tokens</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .button { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
+        .info { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .token { background: #e9ecef; padding: 10px; border-radius: 3px; font-family: monospace; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Okta Authorization Code Flow Demo</h1>
+        <div class="info">
+            <h3>This demo shows:</h3>
+            <ul>
+                <li>Authorization Code Flow with PKCE</li>
+                <li>Refresh Token Support</li>
+                <li>DPoP (Demonstrating Proof of Possession)</li>
+                <li>Secure Token Management</li>
+            </ul>
+        </div>
+        
+        {% if 'access_token' in session %}
+            <h2>✅ Authenticated</h2>
+            <p><strong>Access Token:</strong></p>
+            <div class="token">{{ session.access_token[:50] }}...</div>
+            
+            {% if 'refresh_token' in session %}
+            <p><strong>Refresh Token Available:</strong> ✅</p>
+            <a href="/refresh" class="button">Test Refresh Token</a>
+            {% else %}
+            <p><strong>Refresh Token:</strong> ❌ Not available</p>
+            {% endif %}
+            
+            <br><br>
+            <a href="/api-test" class="button">Test API Call</a>
+            <a href="/logout" class="button">Logout</a>
+        {% else %}
+            <h2>🔐 Not Authenticated</h2>
+            <a href="/login" class="button">Login with Okta</a>
+        {% endif %}
+    </div>
+</body>
+</html>

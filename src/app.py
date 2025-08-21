@@ -20,9 +20,7 @@ def main():
     2. Second app: Uses management API token to access Okta resources
     """
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
-    
-    # === FIRST APP: Custom Authorization Server Authentication ===
-    logging.info("=== FIRST APP: Custom Authorization Server Authentication ===")
+
     
     # Authenticate with custom authorization server (gets app.read, app.write scopes)
     custom_token = okta_service.authenticate()
@@ -60,7 +58,7 @@ def main():
     mgmt_service.helper.okta_issuer = ""  # Use org issuer for management API
     mgmt_service.helper.okta_scopes = "okta.users.read"  # Management API scope
     mgmt_service.helper.access_token = ""  # Clear cached token
-    mgmt_service.helper.token_cache_file = "assets/mgmt_token_cache.json"  # Different cache file
+    mgmt_service.helper.token_cache_file = "assets/mgmt_token_cache.json"
     
     # Authenticate with org authorization server for management API access
     mgmt_token = mgmt_service.authenticate()
